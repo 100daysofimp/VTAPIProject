@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar 27 10:31:12 2021
+
+@author: Sigma-PC
+"""
+##SCRIPT PREREQUISITES
+#Filetype package: https://github.com/h2non/filetype.py
+#VirusTotal API Account
+
+#import packages
+import requests
+import filetype
+import hashlib
+def main():
+#Set source download, filename, and report name
+    file_url = input("Please enter the file URL: ")
+    file_name = input("Please enter the file name with extension, i.e lol.txt: ")
+    vtapi = input("Please enter your VirusTotal API key: ")
+    reportname = input("Please enter a name for the report: ")
+
+#Download file and save to working directory
+    myfile = requests.get(file_url, allow_redirects=True)
+    open(file_name, 'wb').write(myfile.content)
+
+#Determine file extension
+    kind = filetype.guess(file_name)
+    if kind is None:
+        print('Cannot guess file type!')
+        return
+
+    fextension = str('File extension: %s' % kind.extension)
+    fmime = str('File MIME type: %s' % kind.mime)    
+    
+#Run SHA256 Hash against file 	
+    BLOCKSIZE = 65536
+    hasher = hashlib.sha256()
+    with open(file_name, 'rb') as afile:
+        buf = afile.read(BLOCKSIZE)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = afile.read(BLOCKSIZE)     
+            sha256= str('SHA256 Hash: %s' % hasher.hexdigest())
+          
+##Upload to Virustotal
+    vturl = 'https://www.virustotal.com/vtapi/v2/file/scan'
+    params = {'apikey': vtapi}
+    files = {'file': (file_name, open(file_name, 'rb'))}
+    response = requests.post(vturl, files=files, params=params)
+    vt=str(response.json())
+    
+#Run strings Against file
+    from subprocess import Popen, PIPE
+
+    process = Popen(['strings', 'file_name'], stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    strings= str(stdout)
+
+##Print Report to text file
+    ReportText = open(reportname,'w')
+    myList = [(file_name),(file_url),(fextension),(fmime),(sha256),(vt),(strings)]
+
+    for i in myList:
+        ReportText.write(i + '\n')
+    ReportText.close()
+   
+if __name__ == '__main__':
+    main()
