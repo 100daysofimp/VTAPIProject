@@ -49,7 +49,7 @@ def main():
     response = requests.post(vturl, files=files, params=params)
     vt=str(response.json())
     
-#Run strings Against file--wasn't able to get this to run on Windows IDE but should theoretically work
+#Run strings Against file
     from subprocess import Popen, PIPE
 
     process = Popen(['strings', 'file_name'], stdout=PIPE, stderr=PIPE)
